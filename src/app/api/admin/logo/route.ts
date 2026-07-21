@@ -26,13 +26,13 @@ export async function POST(req: NextRequest) {
   const path = `${clientId}/logo-${Date.now()}.${ext}`;
   const buf = Buffer.from(await file.arrayBuffer());
 
-  const { error } = await admin.storage.from('Logos').upload(path, buf, {
+  const { error } = await admin.storage.from('logos').upload(path, buf, {
     contentType: file.type || 'image/png',
     upsert: true,
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-  const { data: pub } = admin.storage.from('Logos').getPublicUrl(path);
+  const { data: pub } = admin.storage.from('logos').getPublicUrl(path);
   const url = pub.publicUrl;
 
   await admin.from('clients').update({ logo_url: url }).eq('id', clientId);

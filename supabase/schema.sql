@@ -82,9 +82,15 @@ create policy clients_manager_read on public.clients
 create policy profiles_own_read on public.profiles
   for select using (id = auth.uid());
 create policy profiles_own_update on public.profiles
-  for update using (id = auth.uid());
+  for update using (id = auth.uid())
+  with check (id = auth.uid());
 create policy profiles_superadmin_all on public.profiles
   for all using (public.get_my_role() = 'superadmin');
+
+-- Los usuarios autenticados solo pueden editar su nombre desde el cliente.
+-- Impide que un manager cambie su role o client_id mediante la API pública.
+revoke update on public.profiles from authenticated;
+grant update (full_name) on public.profiles to authenticated;
 
 -- tokens: superadmin todo; manager solo lee los ASIGNADOS de su cliente
 -- (el pool disponible no se lista al manager; se consume vía RPC)
