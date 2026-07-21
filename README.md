@@ -53,7 +53,7 @@ Abre http://localhost:3000 e inicia sesión con tu superadmin.
 ## Flujo de trabajo
 
 1. **Superadmin** crea un cliente (nombre, color, logo, etiqueta "Amber Cove x Kubi", nombre de red).
-2. Genera tokens en **Linkyfi** (1/3/7 días) y los carga en el detalle del cliente (pegar códigos o subir CSV — se toma la primera columna; duplicados se omiten).
+2. Genera tokens en **Linkyfi** (1/3/7 días) y los carga en el detalle del cliente (pegar códigos o subir CSV — se toma únicamente la columna B, “Token code”; duplicados se omiten).
 3. Crea usuarios gerentes para ese cliente (email + contraseña inicial).
 4. El gerente entra en el mismo URL, ve su portal con su marca y genera/consulta tokens.
 5. Cuando quedan **menos de 50** tokens de una duración: alerta en el dashboard + email (máx. 1 cada 12 h por cliente/duración).

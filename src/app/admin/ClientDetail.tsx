@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { IconArrowLeft, IconUpload, IconUsers, IconPalette } from '@/components/Icons';
 import { durLabel, initials, type Client, type Profile } from '@/lib/format';
+import { parseLinkyfiTokenCsv } from '@/lib/linkyfi-csv';
 import type { Stat } from './AdminApp';
 
 export function ClientDetail({
@@ -85,13 +86,9 @@ export function ClientDetail({
     const reader = new FileReader();
     reader.onload = () => {
       const text = String(reader.result ?? '');
-      // CSV: toma la primera columna de cada línea (ignora encabezado si no parece código)
-      const lines = text.split(/\r?\n/).filter(Boolean);
-      const codes = lines
-        .map((l) => l.split(/[,;\t]/)[0].trim().replace(/^"|"$/g, ''))
-        .filter(Boolean)
-        .filter((c, i) => !(i === 0 && /^(token|codigo|código|code)$/i.test(c)));
+      const codes = parseLinkyfiTokenCsv(text);
       setCodesText(codes.join('\n'));
+      showFlash(`${codes.length} tokens leídos de la columna B`);
     };
     reader.readAsText(file);
     e.target.value = '';
@@ -222,8 +219,8 @@ export function ClientDetail({
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>Cargar tokens de Linkyfi</h3>
         </div>
         <p style={{ margin: '0 0 18px', fontSize: 13, color: '#8E8E96' }}>
-          Pega los códigos (uno por línea) o sube el CSV exportado de Linkyfi. Los duplicados se omiten
-          automáticamente.
+          Pega los códigos (uno por línea) o sube el CSV exportado de Linkyfi. Del CSV se importa únicamente la
+          columna B (“Token code”) y los duplicados se omiten automáticamente.
         </p>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
