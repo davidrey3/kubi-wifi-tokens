@@ -367,17 +367,25 @@ function ClientList({
               onClick={() => onSelect(c)}
               style={{
                 textAlign: 'left',
-                background: '#131316',
-                border: `1px solid ${low ? 'rgba(255,107,107,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                color: '#F4F4F5',
+                background: 'linear-gradient(145deg, #1D211C 0%, #17181B 58%, #151518 100%)',
+                border: `1px solid ${low ? 'rgba(255,107,107,0.40)' : 'rgba(188,255,94,0.16)'}`,
                 borderRadius: 16,
                 padding: 22,
                 cursor: 'pointer',
-                transition: 'border-color 0.12s',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.18)',
+                transition: 'border-color 0.12s, transform 0.12s, box-shadow 0.12s',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'rgba(188,255,94,0.4)')}
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.borderColor = low ? 'rgba(255,107,107,0.35)' : 'rgba(255,255,255,0.08)')
-              }
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(188,255,94,0.42)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 14px 34px rgba(0,0,0,0.26)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = low ? 'rgba(255,107,107,0.40)' : 'rgba(188,255,94,0.16)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.18)';
+              }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                 <div
@@ -403,10 +411,10 @@ function ClientList({
                   )}
                 </div>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#F4F4F5', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {c.name}
                   </div>
-                  <div style={{ fontSize: 12, color: '#6A6A72' }}>{c.brand_label}</div>
+                  <div style={{ fontSize: 12, color: '#92929B' }}>{c.brand_label}</div>
                 </div>
                 {low && (
                   <span
@@ -419,12 +427,12 @@ function ClientList({
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
-                  <div style={{ fontSize: 11.5, color: '#6A6A72', marginBottom: 3 }}>Disponibles</div>
+                  <div style={{ fontSize: 11.5, color: '#92929B', marginBottom: 3 }}>Disponibles</div>
                   <div style={{ fontSize: 22, fontWeight: 800, color: low ? '#FF6B6B' : '#BCFF5E' }}>{disponibles}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 11.5, color: '#6A6A72', marginBottom: 3 }}>Utilizados</div>
-                  <div style={{ fontSize: 22, fontWeight: 800 }}>{asignados}</div>
+                  <div style={{ fontSize: 11.5, color: '#92929B', marginBottom: 3 }}>Utilizados</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: '#F4F4F5' }}>{asignados}</div>
                 </div>
               </div>
             </button>
