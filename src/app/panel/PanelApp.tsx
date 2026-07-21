@@ -211,9 +211,10 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
   } as React.CSSProperties;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', ...brandVars }}>
+    <div className="admin-shell" style={{ display: 'flex', minHeight: '100vh', ...brandVars }}>
       {/* ===== Sidebar ===== */}
       <aside
+        className="admin-sidebar"
         style={{
           width: 256,
           flexShrink: 0,
@@ -226,7 +227,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
           height: '100vh',
         }}
       >
-        <div style={{ padding: '24px 22px 22px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="admin-sidebar-brand" style={{ padding: '24px 22px 22px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           {client.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={client.logo_url} alt={client.name} style={{ maxHeight: 34, maxWidth: 180, display: 'block' }} />
@@ -247,7 +248,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
           </div>
         </div>
 
-        <nav style={{ flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <nav className="admin-nav" style={{ flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
           <button className={`nav-item ${section === 'crear' ? 'active' : ''}`} onClick={() => setSection('crear')}>
             <IconPlusCircle /> Crear Token
           </button>
@@ -267,14 +268,14 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
             <IconList /> Detalles Token
           </button>
 
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '12px 8px' }} />
+          <div className="admin-nav-divider" style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '12px 8px' }} />
 
           <button className={`nav-item ${section === 'ajustes' ? 'active' : ''}`} onClick={() => setSection('ajustes')}>
             <IconSettings /> Ajustes
           </button>
         </nav>
 
-        <div style={{ padding: 14, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="admin-profile" style={{ padding: 14, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '8px 6px' }}>
             <div
               style={{
@@ -340,8 +341,9 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
       </aside>
 
       {/* ===== Main ===== */}
-      <main style={{ flex: 1, minWidth: 0, background: '#0B0B0C' }}>
+      <main className="admin-main" style={{ flex: 1, minWidth: 0, background: '#0B0B0C' }}>
         <header
+          className="admin-header"
           style={{
             height: 68,
             display: 'flex',
@@ -360,13 +362,13 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
             <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, letterSpacing: -0.3 }}>{title}</h2>
             <div style={{ fontSize: 12.5, color: '#6A6A72', marginTop: 1 }}>{subtitle}</div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#8E8E96' }}>
+          <div className="admin-header-date" style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#8E8E96' }}>
             <IconCalendar />
             {todayLabel()}
           </div>
         </header>
 
-        <div style={{ padding: 34, maxWidth: 1080 }}>
+        <div className="admin-content" style={{ padding: 34, maxWidth: 1080 }}>
           {/* ===== CREAR ===== */}
           {section === 'crear' && (
             <div>
@@ -378,7 +380,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
               <div className="micro-label" style={{ marginBottom: 12 }}>
                 Duración del token
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, maxWidth: 640 }}>
+              <div className="token-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, maxWidth: 640 }}>
                 {([1, 3, 7] as const).map((d) => {
                   const sel = selectedDuration === d;
                   return (
@@ -498,7 +500,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                     <div
-                      className="mono"
+                      className="generated-token-code mono"
                       style={{ fontWeight: 700, fontSize: 44, letterSpacing: 8, color: '#F4F4F5' }}
                     >
                       {generated.code}
@@ -509,6 +511,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                     </button>
                   </div>
                   <div
+                    className="token-result-grid"
                     style={{
                       display: 'grid',
                       gridTemplateColumns: 'repeat(3, 1fr)',
@@ -559,7 +562,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                 generación y expiración.
               </p>
 
-              <div style={{ display: 'flex', gap: 12, maxWidth: 520 }}>
+              <div className="mobile-stack-row" style={{ display: 'flex', gap: 12, maxWidth: 520 }}>
                 <input
                   className="mono"
                   value={consultaInput}
@@ -650,6 +653,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
           {section === 'detalles' && (
             <div>
               <div
+                className="token-stats-grid"
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(3, 1fr)',
@@ -681,6 +685,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
               </div>
 
               <div
+                className="token-history-tools"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -707,7 +712,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                     </button>
                   ))}
                 </div>
-                <div style={{ position: 'relative', width: 220 }}>
+                <div className="token-search" style={{ position: 'relative', width: 220 }}>
                   <div style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
                     <IconSearch size={15} color="#6A6A72" />
                   </div>
@@ -739,6 +744,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                 }}
               >
                 <div
+                  className="token-history-header"
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '1.2fr 0.9fr 1.4fr 1.4fr 1fr',
@@ -760,6 +766,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                 </div>
                 {filtered.map((t) => (
                   <div
+                    className="token-history-row"
                     key={t.id}
                     style={{
                       display: 'grid',
@@ -798,7 +805,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                 <p style={{ margin: '0 0 20px', fontSize: 13, color: '#8E8E96' }}>
                   Información visible en tu perfil de gerencia.
                 </p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div className="responsive-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
                     <label className="field-label">Nombre</label>
                     <input className="input-sm" value={fullName} onChange={(e) => setFullName(e.target.value)} />
@@ -834,7 +841,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                       onChange={(e) => setPwCurrent(e.target.value)}
                     />
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div className="responsive-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                     <div>
                       <label className="field-label">Nueva contraseña</label>
                       <input
@@ -868,6 +875,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
               </div>
 
               <div
+                className="mobile-stack-row"
                 style={{
                   background: '#131316',
                   border: '1px solid rgba(255,107,107,0.18)',

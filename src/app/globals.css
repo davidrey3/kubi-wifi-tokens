@@ -256,6 +256,187 @@ textarea:focus {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
+/* ---------- admin responsive ---------- */
+
+@media (max-width: 760px) {
+  .admin-shell {
+    display: block !important;
+    min-width: 0;
+  }
+
+  .admin-sidebar {
+    width: 100% !important;
+    height: auto !important;
+    position: sticky !important;
+    top: 0;
+    z-index: 20;
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .admin-sidebar-brand {
+    padding: 12px 16px 8px !important;
+    border-bottom: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .admin-sidebar-brand > div {
+    margin-top: 0 !important;
+  }
+
+  .admin-nav {
+    flex: none !important;
+    padding: 6px 10px 10px !important;
+    flex-direction: row !important;
+    gap: 6px !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .admin-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .admin-nav .nav-item {
+    width: auto;
+    flex: 1 0 auto;
+    min-height: 42px;
+    justify-content: center;
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+
+  .admin-nav-divider,
+  .admin-profile {
+    display: none !important;
+  }
+
+  .admin-main {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-header {
+    height: auto !important;
+    min-height: 64px;
+    padding: 11px 16px !important;
+    position: static !important;
+  }
+
+  .admin-header h2 {
+    font-size: 19px !important;
+  }
+
+  .admin-header-date {
+    display: none !important;
+  }
+
+  .admin-content {
+    width: 100%;
+    max-width: none !important;
+    padding: 20px 16px 32px !important;
+  }
+
+  .client-list-heading,
+  .mobile-stack-row {
+    align-items: stretch !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .client-list-heading .btn-accent,
+  .mobile-stack-row > .btn-accent,
+  .mobile-stack-row > .btn-danger {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .client-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .client-card {
+    width: 100%;
+    min-width: 0;
+    padding: 18px !important;
+  }
+
+  .token-stats-grid,
+  .token-result-grid,
+  .responsive-form-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .generated-token-code {
+    max-width: 100%;
+    font-size: clamp(28px, 10vw, 42px) !important;
+    letter-spacing: 4px !important;
+    overflow-wrap: anywhere;
+  }
+
+  .token-history-tools {
+    align-items: stretch !important;
+    flex-direction: column;
+  }
+
+  .token-history-tools > div:first-child {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .token-search {
+    width: 100% !important;
+  }
+
+  .token-history-header {
+    display: none !important;
+  }
+
+  .token-history-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 14px 12px !important;
+    padding: 18px 16px !important;
+  }
+
+  .token-history-row > div:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .token-history-row > div::before {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--muted-2);
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+  }
+
+  .token-history-row > div:nth-child(1)::before { content: 'Token'; }
+  .token-history-row > div:nth-child(2)::before { content: 'Validez'; }
+  .token-history-row > div:nth-child(3)::before { content: 'Generado'; }
+  .token-history-row > div:nth-child(4)::before { content: 'Expira'; }
+  .token-history-row > div:nth-child(5)::before { content: 'Estado'; }
+
+  .token-history-row > div:last-child {
+    text-align: left !important;
+  }
+
+  .card {
+    padding: 20px 16px;
+  }
+
+  .admin-content input,
+  .admin-content select,
+  .admin-content textarea {
+    font-size: 16px;
+  }
+}
+
 .spinner {
   width: 16px;
   height: 16px;

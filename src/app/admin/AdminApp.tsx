@@ -100,9 +100,10 @@ export function AdminApp({ profile }: { profile: Profile }) {
         : 'Tu cuenta de superadmin';
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="admin-shell" style={{ display: 'flex', minHeight: '100vh' }}>
       {/* Sidebar */}
       <aside
+        className="admin-sidebar"
         style={{
           width: 256,
           flexShrink: 0,
@@ -115,7 +116,7 @@ export function AdminApp({ profile }: { profile: Profile }) {
           height: '100vh',
         }}
       >
-        <div style={{ padding: '24px 22px 22px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="admin-sidebar-brand" style={{ padding: '24px 22px 22px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <KubiLogo width={78} height={34} />
           <div
             style={{
@@ -131,7 +132,7 @@ export function AdminApp({ profile }: { profile: Profile }) {
           </div>
         </div>
 
-        <nav style={{ flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <nav className="admin-nav" style={{ flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
           <button
             className={`nav-item ${view === 'clientes' ? 'active' : ''}`}
             onClick={() => {
@@ -168,7 +169,7 @@ export function AdminApp({ profile }: { profile: Profile }) {
             )}
           </button>
 
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '12px 8px' }} />
+          <div className="admin-nav-divider" style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '12px 8px' }} />
 
           <button
             className={`nav-item ${view === 'ajustes' ? 'active' : ''}`}
@@ -181,7 +182,7 @@ export function AdminApp({ profile }: { profile: Profile }) {
           </button>
         </nav>
 
-        <div style={{ padding: 14, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="admin-profile" style={{ padding: 14, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '8px 6px' }}>
             <div
               style={{
@@ -222,8 +223,9 @@ export function AdminApp({ profile }: { profile: Profile }) {
       </aside>
 
       {/* Main */}
-      <main style={{ flex: 1, minWidth: 0, background: '#0B0B0C' }}>
+      <main className="admin-main" style={{ flex: 1, minWidth: 0, background: '#0B0B0C' }}>
         <header
+          className="admin-header"
           style={{
             height: 68,
             display: 'flex',
@@ -242,13 +244,13 @@ export function AdminApp({ profile }: { profile: Profile }) {
             <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, letterSpacing: -0.3 }}>{headerTitle}</h2>
             <div style={{ fontSize: 12.5, color: '#6A6A72', marginTop: 1 }}>{headerSubtitle}</div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#8E8E96' }}>
+          <div className="admin-header-date" style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#8E8E96' }}>
             <IconCalendar />
             {todayLabel()}
           </div>
         </header>
 
-        <div style={{ padding: 34, maxWidth: 1080 }}>
+        <div className="admin-content" style={{ padding: 34, maxWidth: 1080 }}>
           {selectedClient ? (
             <ClientDetail
               client={selectedClient}
@@ -331,7 +333,7 @@ function ClientList({
 }) {
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
+      <div className="client-list-heading" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
         <p style={{ margin: 0, fontSize: 14.5, color: '#A0A0A8', maxWidth: 560, lineHeight: 1.55 }}>
           Cada cliente tiene su propio pool de tokens, usuarios y marca.
         </p>
@@ -355,7 +357,7 @@ function ClientList({
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+      <div className="client-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
         {clients.map((c) => {
           const cs = stats.filter((s) => s.client_id === c.id);
           const disponibles = cs.reduce((a, s) => a + Number(s.disponibles), 0);
@@ -363,6 +365,7 @@ function ClientList({
           const low = cs.some((s) => Number(s.disponibles) < 50);
           return (
             <button
+              className="client-card"
               key={c.id}
               onClick={() => onSelect(c)}
               style={{
@@ -456,7 +459,7 @@ function AlertsView({
 }) {
   return (
     <div style={{ maxWidth: 720 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div className="mobile-stack-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <p style={{ margin: 0, fontSize: 14.5, color: '#A0A0A8' }}>
           Se genera una alerta cuando a un cliente le quedan menos de 50 tokens de una duración.
         </p>
@@ -565,7 +568,7 @@ function AdminSettings({
             <label className="field-label">Contraseña actual</label>
             <input className="input-sm" type="password" placeholder="••••••••" value={pwCurrent} onChange={(e) => setPwCurrent(e.target.value)} />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="responsive-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div>
               <label className="field-label">Nueva contraseña</label>
               <input className="input-sm" type="password" placeholder="••••••••" value={pwNew} onChange={(e) => setPwNew(e.target.value)} />
@@ -587,6 +590,7 @@ function AdminSettings({
       </div>
 
       <div
+        className="mobile-stack-row"
         style={{
           background: '#131316',
           border: '1px solid rgba(255,107,107,0.18)',
@@ -674,7 +678,7 @@ function NewClientModal({ onClose, onCreated }: { onClose: () => void; onCreated
           style={{ marginBottom: 16 }}
         />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        <div className="responsive-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
           <div>
             <label className="field-label">Color de acento</label>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>

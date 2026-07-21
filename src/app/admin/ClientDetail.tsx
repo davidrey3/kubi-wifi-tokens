@@ -184,7 +184,7 @@ export function ClientDetail({
         <div className="micro-label" style={{ marginBottom: 12 }}>
           Consumo de tokens
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, maxWidth: 760 }}>
+        <div className="token-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, maxWidth: 760 }}>
           {[1, 3, 7].map((d) => {
             const s = statFor(d);
             const low = Number(s.disponibles) < 50;
@@ -325,11 +325,11 @@ export function ClientDetail({
         <div className="micro-label" style={{ marginBottom: 10 }}>
           Nuevo usuario
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="responsive-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <input className="input-sm" placeholder="Nombre" value={nuName} onChange={(e) => setNuName(e.target.value)} />
           <input className="input-sm" type="email" placeholder="correo@cliente.com" value={nuEmail} onChange={(e) => setNuEmail(e.target.value)} />
         </div>
-        <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+        <div className="mobile-stack-row" style={{ display: 'flex', gap: 12, marginTop: 12 }}>
           <input
             className="input-sm"
             type="text"
@@ -354,7 +354,7 @@ export function ClientDetail({
           Personaliza cómo ve el cliente su portal: logo, color de acento y nombre de la red.
         </p>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18 }}>
+        <div className="mobile-stack-row" style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18 }}>
           <div
             style={{
               width: 120,
@@ -381,7 +381,7 @@ export function ClientDetail({
           <input ref={logoRef} type="file" accept=".png,.jpg,.jpeg,.svg,.webp" style={{ display: 'none' }} onChange={handleLogoUpload} />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="responsive-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div>
             <label className="field-label">Nombre del cliente</label>
             <input className="input-sm" value={bName} onChange={(e) => setBName(e.target.value)} />
