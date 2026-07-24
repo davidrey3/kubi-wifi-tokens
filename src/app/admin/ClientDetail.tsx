@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { IconArrowLeft, IconUpload, IconUsers, IconPalette } from '@/components/Icons';
-import { durLabel, initials, type Client, type Profile } from '@/lib/format';
+import { durLabel, initials, TOKEN_DURATIONS, type Client, type Profile, type TokenDuration } from '@/lib/format';
 import { parseLinkyfiTokenCsv } from '@/lib/linkyfi-csv';
 import type { Stat } from './AdminApp';
 
@@ -24,7 +24,7 @@ export function ClientDetail({
   const [users, setUsers] = useState<Profile[]>([]);
 
   // carga de tokens
-  const [uploadDuration, setUploadDuration] = useState<1 | 3 | 7>(1);
+  const [uploadDuration, setUploadDuration] = useState<TokenDuration>(1);
   const [codesText, setCodesText] = useState('');
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -181,8 +181,8 @@ export function ClientDetail({
         <div className="micro-label" style={{ marginBottom: 12 }}>
           Consumo de tokens
         </div>
-        <div className="token-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, maxWidth: 760 }}>
-          {[1, 3, 7].map((d) => {
+        <div className="token-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, maxWidth: 980 }}>
+          {TOKEN_DURATIONS.map((d) => {
             const s = statFor(d);
             const low = Number(s.disponibles) < 50;
             return (
@@ -213,7 +213,7 @@ export function ClientDetail({
       </div>
 
       {/* ===== Cargar tokens ===== */}
-      <div className="card" style={{ maxWidth: 760 }}>
+      <div className="card" style={{ maxWidth: 980 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
           <IconUpload color="#BCFF5E" />
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>Cargar tokens de Linkyfi</h3>
@@ -224,7 +224,7 @@ export function ClientDetail({
         </p>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-          {([1, 3, 7] as const).map((d) => (
+          {TOKEN_DURATIONS.map((d) => (
             <button
               key={d}
               className={`chip ${uploadDuration === d ? 'active' : ''}`}

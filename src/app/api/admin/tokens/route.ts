@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSuperadmin } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { isTokenDuration } from '@/lib/format';
 
 /**
  * Carga masiva de tokens (export de Linkyfi).
- * Body: { client_id, duration_days: 1|3|7, codes: string[] }
+ * Body: { client_id, duration_days: 1|3|7|365, codes: string[] }
  * Acepta hasta 10.000 códigos por llamada. Duplicados (mismo cliente+código) se omiten.
  */
 export async function POST(req: NextRequest) {
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
   const duration = Number(body?.duration_days);
   const rawCodes: unknown = body?.codes;
 
-  if (!clientId || ![1, 3, 7].includes(duration) || !Array.isArray(rawCodes)) {
+  if (!clientId || !isTokenDuration(duration) || !Array.isArray(rawCodes)) {
     return NextResponse.json({ error: 'datos_invalidos' }, { status: 400 });
   }
 
@@ -51,7 +52,7 @@ export async function DELETE(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const clientId = String(body?.client_id ?? '');
   const duration = Number(body?.duration_days);
-  if (!clientId || ![1, 3, 7].includes(duration)) {
+  if (!clientId || !isTokenDuration(duration)) {
     return NextResponse.json({ error: 'datos_invalidos' }, { status: 400 });
   }
 

@@ -15,6 +15,13 @@ export function durLabel(days: number): string {
   return days === 1 ? '1 día' : `${days} días`;
 }
 
+export const TOKEN_DURATIONS = [1, 3, 7, 365] as const;
+export type TokenDuration = (typeof TOKEN_DURATIONS)[number];
+
+export function isTokenDuration(value: number): value is TokenDuration {
+  return TOKEN_DURATIONS.includes(value as TokenDuration);
+}
+
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return '·';

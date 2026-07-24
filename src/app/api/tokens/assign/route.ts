@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { sendLowStockEmail } from '@/lib/email';
+import { isTokenDuration } from '@/lib/format';
 
 export async function POST(req: NextRequest) {
   const supabase = supabaseServer();
@@ -12,7 +13,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => null);
   const duration = Number(body?.duration);
-  if (![1, 3, 7].includes(duration)) {
+  if (!isTokenDuration(duration)) {
     return NextResponse.json({ error: 'duracion_invalida' }, { status: 400 });
   }
 

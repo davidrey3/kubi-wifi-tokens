@@ -30,7 +30,7 @@ create table if not exists public.tokens (
   id uuid primary key default gen_random_uuid(),
   client_id uuid not null references public.clients (id) on delete cascade,
   code text not null,
-  duration_days int not null check (duration_days in (1, 3, 7)),
+  duration_days int not null check (duration_days in (1, 3, 7, 365)),
   status text not null default 'disponible' check (status in ('disponible', 'asignado')),
   assigned_at timestamptz,
   expires_at timestamptz,
@@ -119,7 +119,7 @@ declare
   v_token public.tokens%rowtype;
   v_remaining int;
 begin
-  if p_duration not in (1, 3, 7) then
+  if p_duration not in (1, 3, 7, 365) then
     raise exception 'duracion_invalida';
   end if;
 

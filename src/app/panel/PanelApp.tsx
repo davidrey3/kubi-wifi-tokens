@@ -16,7 +16,17 @@ import {
   IconCheck,
   IconAlert,
 } from '@/components/Icons';
-import { fmtDate, todayLabel, durLabel, initials, type Client, type Profile, type TokenRow } from '@/lib/format';
+import {
+  fmtDate,
+  todayLabel,
+  durLabel,
+  initials,
+  TOKEN_DURATIONS,
+  type Client,
+  type Profile,
+  type TokenDuration,
+  type TokenRow,
+} from '@/lib/format';
 
 type Section = 'crear' | 'consultar' | 'detalles' | 'ajustes';
 
@@ -43,7 +53,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
   const supabase = useMemo(() => supabaseBrowser(), []);
 
   const [section, setSection] = useState<Section>('crear');
-  const [selectedDuration, setSelectedDuration] = useState<1 | 3 | 7>(3);
+  const [selectedDuration, setSelectedDuration] = useState<TokenDuration>(3);
   const [generated, setGenerated] = useState<Generated | null>(null);
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
@@ -380,8 +390,8 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
               <div className="micro-label" style={{ marginBottom: 12 }}>
                 Duración del token
               </div>
-              <div className="token-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, maxWidth: 640 }}>
-                {([1, 3, 7] as const).map((d) => {
+              <div className="token-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, maxWidth: 860 }}>
+                {TOKEN_DURATIONS.map((d) => {
                   const sel = selectedDuration === d;
                   return (
                     <button
@@ -408,7 +418,13 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                         </span>
                       </div>
                       <div style={{ fontSize: 12.5, color: '#8E8E96', marginTop: 3 }}>
-                        {d === 1 ? '24 horas de acceso' : d === 3 ? '72 horas de acceso' : '1 semana de acceso'}
+                        {d === 1
+                          ? '24 horas de acceso'
+                          : d === 3
+                            ? '72 horas de acceso'
+                            : d === 7
+                              ? '1 semana de acceso'
+                              : '1 año de acceso'}
                       </div>
                       {sel && (
                         <div
