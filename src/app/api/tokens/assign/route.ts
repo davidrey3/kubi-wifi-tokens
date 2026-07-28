@@ -13,19 +13,30 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => null);
   const duration = Number(body?.duration);
+  const quantity = body?.quantity === undefined ? 1 : Number(body.quantity);
   if (!isTokenDuration(duration)) {
     return NextResponse.json({ error: 'duracion_invalida' }, { status: 400 });
   }
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000) {
+    return NextResponse.json({ error: 'cantidad_invalida' }, { status: 400 });
+  }
 
-  const { data, error } = await supabase.rpc('assign_token', { p_duration: duration });
+  const { data, error } =
+    quantity === 1
+      ? await supabase.rpc('assign_token', { p_duration: duration })
+      : await supabase.rpc('assign_tokens', { p_duration: duration, p_quantity: quantity });
 
   if (error) {
-    const msg = error.message.includes('sin_tokens_disponibles')
+    if (error.message.includes('tokens_insuficientes')) {
+      const available = Number(error.message.match(/tokens_insuficientes:(\d+)/)?.[1] ?? 0);
+      return NextResponse.json({ error: 'tokens_insuficientes', available }, { status: 409 });
+    }
+    const code = error.message.includes('sin_tokens_disponibles')
       ? 'sin_tokens_disponibles'
       : error.message.includes('sin_cliente')
         ? 'sin_cliente'
         : 'error_interno';
-    return NextResponse.json({ error: msg }, { status: msg === 'error_interno' ? 500 : 409 });
+    return NextResponse.json({ error: code }, { status: code === 'error_interno' ? 500 : 409 });
   }
 
   // Alerta por email si el pool bajó del umbral (no bloquea la respuesta)
@@ -49,6 +60,14 @@ export async function POST(req: NextRequest) {
     } catch (e) {
       console.error('email alert failed', e);
     }
+  }
+
+  if (quantity > 1) {
+    return NextResponse.json({
+      tokens: data.tokens,
+      quantity: data.tokens.length,
+      remaining: data.remaining,
+    });
   }
 
   return NextResponse.json({

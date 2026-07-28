@@ -37,6 +37,8 @@ type Generated = {
   expires_at: string;
 };
 
+type BulkToken = Generated;
+
 type ConsultaResult =
   | { found: false; code: string }
   | { found: true; code: string; duration_days: number; assigned_at: string; expires_at: string };
@@ -57,6 +59,9 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
   const [generated, setGenerated] = useState<Generated | null>(null);
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
+  const [bulkQuantity, setBulkQuantity] = useState('200');
+  const [bulkGenerating, setBulkGenerating] = useState(false);
+  const [bulkError, setBulkError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const [consultaInput, setConsultaInput] = useState('');
@@ -131,6 +136,64 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
     await navigator.clipboard.writeText(generated.code);
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
+  }
+
+  function downloadTokensCsv(tokensToDownload: BulkToken[]) {
+    const csvCell = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
+    const rows = [
+      ['Token', 'Duración (días)', 'Generado', 'Expira'],
+      ...tokensToDownload.map((token) => [
+        token.code,
+        token.duration_days,
+        token.assigned_at,
+        token.expires_at,
+      ]),
+    ];
+    const csv = `\uFEFF${rows.map((row) => row.map(csvCell).join(',')).join('\r\n')}`;
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const anchor = document.createElement('a');
+    const date = new Date().toISOString().slice(0, 10);
+    anchor.href = url;
+    anchor.download = `tokens-${selectedDuration}-dias-${date}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleBulkGenerate() {
+    const quantity = Number(bulkQuantity);
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000) {
+      setBulkError('Ingresa una cantidad entre 1 y 1,000 tokens.');
+      return;
+    }
+
+    setBulkGenerating(true);
+    setBulkError(null);
+    try {
+      const res = await fetch('/api/tokens/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duration: selectedDuration, quantity }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setBulkError(
+          json.error === 'tokens_insuficientes'
+            ? `Solo hay ${json.available ?? 0} tokens de ${durLabel(selectedDuration)} disponibles. No se generó ninguno.`
+            : 'No se pudieron generar los tokens. Intenta de nuevo.'
+        );
+        return;
+      }
+
+      downloadTokensCsv(json.tokens as BulkToken[]);
+      showFlash(`${json.quantity} tokens generados y CSV descargado`);
+      loadTokens();
+    } catch {
+      setBulkError('Error de conexión. Intenta de nuevo.');
+    } finally {
+      setBulkGenerating(false);
+    }
   }
 
   async function handleConsulta() {
@@ -478,6 +541,65 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                   <div style={{ fontSize: 13.5, color: '#F4F4F5', fontWeight: 600 }}>{genError}</div>
                 </div>
               )}
+
+              <div
+                className="card"
+                style={{
+                  maxWidth: 640,
+                  marginTop: 28,
+                  padding: 22,
+                  borderColor: 'rgba(188,255,94,0.18)',
+                }}
+              >
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#F4F4F5' }}>Generación masiva</div>
+                <p style={{ margin: '7px 0 18px', fontSize: 13.5, color: '#8E8E96', lineHeight: 1.5 }}>
+                  Genera varios tokens de {durLabel(selectedDuration)} a la vez. Al terminar, el archivo CSV se
+                  descargará automáticamente.
+                </p>
+                <div className="mobile-stack-row" style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
+                  <label style={{ display: 'flex', flex: 1, flexDirection: 'column', gap: 7 }}>
+                    <span className="micro-label">Cantidad de tokens</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={1000}
+                      step={1}
+                      value={bulkQuantity}
+                      onChange={(e) => setBulkQuantity(e.target.value)}
+                      style={{ width: '100%' }}
+                    />
+                  </label>
+                  <button
+                    className="btn-accent"
+                    style={{ minHeight: 44, padding: '11px 20px' }}
+                    onClick={handleBulkGenerate}
+                    disabled={bulkGenerating}
+                  >
+                    {bulkGenerating ? <span className="spinner" /> : <IconBolt color="#0B0B0C" />}
+                    {bulkGenerating ? 'Generando…' : 'Generar y descargar CSV'}
+                  </button>
+                </div>
+                <div style={{ marginTop: 10, fontSize: 11.5, color: '#6A6A72' }}>
+                  Máximo 1,000 tokens por descarga.
+                </div>
+                {bulkError && (
+                  <div
+                    style={{
+                      marginTop: 16,
+                      background: '#17110F',
+                      border: '1px solid rgba(255,107,107,0.3)',
+                      borderRadius: 12,
+                      padding: '13px 15px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                    }}
+                  >
+                    <IconAlert color="#FF6B6B" />
+                    <div style={{ fontSize: 13, color: '#F4F4F5', fontWeight: 600 }}>{bulkError}</div>
+                  </div>
+                )}
+              </div>
 
               {generated && (
                 <div
