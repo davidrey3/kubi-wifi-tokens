@@ -13,7 +13,8 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => null);
   const duration = Number(body?.duration);
-  const quantity = body?.quantity === undefined ? 1 : Number(body.quantity);
+  const isBulkRequest = body?.quantity !== undefined;
+  const quantity = isBulkRequest ? Number(body.quantity) : 1;
   if (!isTokenDuration(duration)) {
     return NextResponse.json({ error: 'duracion_invalida' }, { status: 400 });
   }
@@ -22,9 +23,9 @@ export async function POST(req: NextRequest) {
   }
 
   const { data, error } =
-    quantity === 1
-      ? await supabase.rpc('assign_token', { p_duration: duration })
-      : await supabase.rpc('assign_tokens', { p_duration: duration, p_quantity: quantity });
+    isBulkRequest
+      ? await supabase.rpc('assign_tokens', { p_duration: duration, p_quantity: quantity })
+      : await supabase.rpc('assign_token', { p_duration: duration });
 
   if (error) {
     if (error.message.includes('tokens_insuficientes')) {
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  if (quantity > 1) {
+  if (isBulkRequest) {
     return NextResponse.json({
       tokens: data.tokens,
       quantity: data.tokens.length,
