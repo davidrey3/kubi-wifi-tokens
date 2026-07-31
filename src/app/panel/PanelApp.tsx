@@ -27,6 +27,7 @@ import {
   type TokenDuration,
   type TokenRow,
 } from '@/lib/format';
+import { exportGeneratedTokens, type TokenExportMode } from '@/lib/token-export';
 
 type Section = 'crear' | 'consultar' | 'detalles' | 'ajustes';
 
@@ -62,6 +63,9 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
   const [bulkQuantity, setBulkQuantity] = useState('200');
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [bulkError, setBulkError] = useState<string | null>(null);
+  const [outputMode, setOutputMode] = useState<TokenExportMode>('tokens');
+  const [includePrintablePdf, setIncludePrintablePdf] = useState(false);
+  const [exportProgress, setExportProgress] = useState<{ completed: number; total: number } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const [consultaInput, setConsultaInput] = useState('');
@@ -122,7 +126,30 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
       }
       setGenerated(json);
       setCopied(false);
-      showFlash('Token generado correctamente');
+      let exportSucceeded = true;
+      if (outputMode !== 'tokens') {
+        try {
+          const date = new Date().toISOString().slice(0, 10);
+          await exportGeneratedTokens([json as Generated], {
+            mode: outputMode,
+            includePdf: includePrintablePdf,
+            baseName: `token-${json.code}-${date}`,
+            onProgress: (completed, total) => setExportProgress({ completed, total }),
+          });
+        } catch {
+          exportSucceeded = false;
+          setGenError('El token fue generado, pero no se pudo preparar la descarga QR. Puedes verlo en el historial.');
+        } finally {
+          setExportProgress(null);
+        }
+      }
+      showFlash(
+        outputMode === 'tokens'
+          ? 'Token generado correctamente'
+          : exportSucceeded
+            ? 'Token generado y archivo descargado'
+            : 'Token generado; descarga pendiente'
+      );
       loadTokens();
     } catch {
       setGenError('Error de conexión. Intenta de nuevo.');
@@ -138,29 +165,6 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
     setTimeout(() => setCopied(false), 1800);
   }
 
-  function downloadTokensCsv(tokensToDownload: BulkToken[]) {
-    const csvCell = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
-    const rows = [
-      ['Token', 'Duración (días)', 'Generado', 'Expira'],
-      ...tokensToDownload.map((token) => [
-        token.code,
-        token.duration_days,
-        token.assigned_at,
-        token.expires_at,
-      ]),
-    ];
-    const csv = `\uFEFF${rows.map((row) => row.map(csvCell).join(',')).join('\r\n')}`;
-    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-    const anchor = document.createElement('a');
-    const date = new Date().toISOString().slice(0, 10);
-    anchor.href = url;
-    anchor.download = `tokens-${selectedDuration}-dias-${date}.csv`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
-  }
-
   async function handleBulkGenerate() {
     const quantity = Number(bulkQuantity);
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000) {
@@ -170,6 +174,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
 
     setBulkGenerating(true);
     setBulkError(null);
+    let tokensWereAssigned = false;
     try {
       const res = await fetch('/api/tokens/assign', {
         method: 'POST',
@@ -186,12 +191,24 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
         return;
       }
 
-      downloadTokensCsv(json.tokens as BulkToken[]);
-      showFlash(`${json.quantity} tokens generados y CSV descargado`);
+      tokensWereAssigned = true;
+      const date = new Date().toISOString().slice(0, 10);
+      await exportGeneratedTokens(json.tokens as BulkToken[], {
+        mode: outputMode,
+        includePdf: includePrintablePdf,
+        baseName: `tokens-${selectedDuration}-dias-${date}`,
+        onProgress: (completed, total) => setExportProgress({ completed, total }),
+      });
+      showFlash(`${json.quantity} tokens generados y archivo descargado`);
       loadTokens();
     } catch {
-      setBulkError('Error de conexión. Intenta de nuevo.');
+      setBulkError(
+        tokensWereAssigned
+          ? 'Los tokens fueron generados, pero no se pudo preparar la descarga. Revisa el historial.'
+          : 'Error de conexión. No se pudo completar la solicitud.'
+      );
     } finally {
+      setExportProgress(null);
       setBulkGenerating(false);
     }
   }
@@ -512,6 +529,45 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                 })}
               </div>
 
+              <div style={{ marginTop: 24, maxWidth: 640 }}>
+                <div className="micro-label" style={{ marginBottom: 10 }}>
+                  Formato de salida
+                </div>
+                <select
+                  value={outputMode}
+                  onChange={(e) => setOutputMode(e.target.value as TokenExportMode)}
+                  style={{ width: '100%', minHeight: 44 }}
+                >
+                  <option value="tokens">Tokens / CSV solamente</option>
+                  <option value="qr">Códigos QR solamente</option>
+                  <option value="both">CSV + códigos QR</option>
+                </select>
+                {outputMode !== 'tokens' && (
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 9,
+                      marginTop: 12,
+                      color: '#C7C7CF',
+                      fontSize: 13,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={includePrintablePdf}
+                      onChange={(e) => setIncludePrintablePdf(e.target.checked)}
+                      style={{ width: 17, height: 17 }}
+                    />
+                    Incluir PDF imprimible con cada QR y su token
+                  </label>
+                )}
+                <div style={{ marginTop: 9, fontSize: 11.5, color: '#6A6A72', lineHeight: 1.45 }}>
+                  Los QR se crean localmente en este navegador y codifican únicamente el valor del token.
+                </div>
+              </div>
+
               <button
                 className="btn-accent"
                 style={{ marginTop: 24, padding: '14px 26px' }}
@@ -519,7 +575,11 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                 disabled={generating}
               >
                 {generating ? <span className="spinner" /> : <IconBolt color="#0B0B0C" />}
-                {generating ? 'Generando…' : 'Generar Token'}
+                {generating
+                  ? exportProgress
+                    ? `Preparando QR ${exportProgress.completed}/${exportProgress.total}…`
+                    : 'Generando…'
+                  : 'Generar Token'}
               </button>
 
               {genError && (
@@ -576,7 +636,13 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                     disabled={bulkGenerating}
                   >
                     {bulkGenerating ? <span className="spinner" /> : <IconBolt color="#0B0B0C" />}
-                    {bulkGenerating ? 'Generando…' : 'Generar y descargar CSV'}
+                    {bulkGenerating
+                      ? exportProgress
+                        ? `Preparando QR ${exportProgress.completed}/${exportProgress.total}…`
+                        : 'Generando…'
+                      : outputMode === 'tokens'
+                        ? 'Generar y descargar CSV'
+                        : 'Generar y descargar'}
                   </button>
                 </div>
                 <div style={{ marginTop: 10, fontSize: 11.5, color: '#6A6A72' }}>
