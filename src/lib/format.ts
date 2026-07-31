@@ -44,6 +44,7 @@ export type Client = {
   name: string;
   slug: string;
   logo_url: string | null;
+  card_template_url: string | null;
   accent_color: string;
   accent_hover: string;
   brand_label: string;

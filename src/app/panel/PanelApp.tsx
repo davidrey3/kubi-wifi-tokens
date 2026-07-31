@@ -82,9 +82,14 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
   const [pwNew, setPwNew] = useState('');
   const [pwConfirm, setPwConfirm] = useState('');
   const [savingPw, setSavingPw] = useState(false);
+  const [cardTemplateUrl, setCardTemplateUrl] = useState(client.card_template_url ?? '');
+  const [uploadingCardTemplate, setUploadingCardTemplate] = useState(false);
+  const cardTemplateRef = useRef<HTMLInputElement>(null);
 
   const [flash, setFlash] = useState<string | null>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout>>();
+  const isAviancaClient = `${client.name} ${client.slug}`.toLowerCase().includes('avianca');
+  const effectiveCardTemplateUrl = cardTemplateUrl || (isAviancaClient ? '/templates/avianca-insignia-card.png' : '');
 
   function showFlash(msg: string) {
     setFlash(msg);
@@ -134,6 +139,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
             mode: outputMode,
             includePdf: includePrintablePdf,
             baseName: `token-${json.code}-${date}`,
+            cardTemplateUrl: effectiveCardTemplateUrl || undefined,
             onProgress: (completed, total) => setExportProgress({ completed, total }),
           });
         } catch {
@@ -197,6 +203,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
         mode: outputMode,
         includePdf: includePrintablePdf,
         baseName: `tokens-${selectedDuration}-dias-${date}`,
+        cardTemplateUrl: effectiveCardTemplateUrl || undefined,
         onProgress: (completed, total) => setExportProgress({ completed, total }),
       });
       showFlash(`${json.quantity} tokens generados y archivo descargado`);
@@ -269,6 +276,42 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
       setPwNew('');
       setPwConfirm('');
     }
+  }
+
+  async function handleCardTemplateUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      showFlash('La imagen debe pesar menos de 8 MB');
+      return;
+    }
+
+    try {
+      const bitmap = await createImageBitmap(file);
+      const ratio = bitmap.width / bitmap.height;
+      bitmap.close();
+      if (Math.abs(ratio - 85.6 / 54) > 0.04) {
+        showFlash('La imagen debe tener proporción de tarjeta de crédito (85.6 × 54 mm)');
+        return;
+      }
+    } catch {
+      showFlash('No se pudo leer la imagen');
+      return;
+    }
+
+    setUploadingCardTemplate(true);
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch('/api/client/card-template', { method: 'POST', body: form });
+    const json = await res.json();
+    setUploadingCardTemplate(false);
+    if (!res.ok) {
+      showFlash(`No se pudo guardar el diseño: ${json.error}`);
+      return;
+    }
+    setCardTemplateUrl(json.url);
+    showFlash('Diseño de tarjeta guardado');
   }
 
   async function handleLogout() {
@@ -560,7 +603,9 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                       onChange={(e) => setIncludePrintablePdf(e.target.checked)}
                       style={{ width: 17, height: 17 }}
                     />
-                    Incluir PDF imprimible con cada QR y su token
+                    {effectiveCardTemplateUrl
+                      ? 'Incluir PDF con el diseño de tarjeta (8 por página)'
+                      : 'Incluir PDF imprimible con cada QR y su token'}
                   </label>
                 )}
                 <div style={{ marginTop: 9, fontSize: 11.5, color: '#6A6A72', lineHeight: 1.45 }}>
@@ -1004,6 +1049,97 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
           {/* ===== AJUSTES ===== */}
           {section === 'ajustes' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 620 }}>
+              <div className="card">
+                <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800 }}>Diseño de tarjeta QR</h3>
+                <p style={{ margin: '0 0 18px', fontSize: 13, color: '#8E8E96', lineHeight: 1.5 }}>
+                  Sube el fondo predeterminado para los PDF imprimibles. Debe tener proporción de tarjeta de crédito
+                  (85.6 × 54 mm) y dejar libres las zonas marcadas para el QR y el token.
+                </p>
+
+                <div
+                  style={{
+                    position: 'relative',
+                    width: '100%',
+                    maxWidth: 480,
+                    aspectRatio: '85.6 / 54',
+                    overflow: 'hidden',
+                    borderRadius: 14,
+                    background: '#0E0E10',
+                    border: '1px solid rgba(255,255,255,0.10)',
+                  }}
+                >
+                  {effectiveCardTemplateUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={effectiveCardTemplateUrl}
+                      alt="Diseño actual de tarjeta"
+                      style={{ width: '100%', height: '100%', objectFit: 'fill', display: 'block' }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#6A6A72',
+                        fontSize: 13,
+                      }}
+                    >
+                      Sin diseño personalizado
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: '65.5%',
+                      top: '39.6%',
+                      width: '18.8%',
+                      height: '29.8%',
+                      border: '2px dashed rgba(188,255,94,0.9)',
+                      background: 'rgba(188,255,94,0.08)',
+                    }}
+                  />
+                  <div
+                    className="mono"
+                    style={{
+                      position: 'absolute',
+                      left: '57%',
+                      top: '78%',
+                      width: '36%',
+                      textAlign: 'center',
+                      fontSize: 10,
+                      fontWeight: 800,
+                      color: '#BCFF5E',
+                      textShadow: '0 1px 3px #000',
+                    }}
+                  >
+                    TOKEN AQUÍ
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 10, fontSize: 11.5, color: '#6A6A72', lineHeight: 1.5 }}>
+                  Formatos: PNG, JPG o WebP. Recomendado: 1316 × 830 px o mayor. Máximo 8 MB.
+                </div>
+                <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
+                  <button
+                    className="btn-accent"
+                    style={{ padding: '11px 20px', fontSize: 13.5 }}
+                    onClick={() => cardTemplateRef.current?.click()}
+                    disabled={uploadingCardTemplate}
+                  >
+                    {uploadingCardTemplate ? 'Subiendo…' : 'Subir diseño de tarjeta'}
+                  </button>
+                  <input
+                    ref={cardTemplateRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    style={{ display: 'none' }}
+                    onChange={handleCardTemplateUpload}
+                  />
+                </div>
+              </div>
+
               <div className="card">
                 <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800 }}>Datos de la cuenta</h3>
                 <p style={{ margin: '0 0 20px', fontSize: 13, color: '#8E8E96' }}>

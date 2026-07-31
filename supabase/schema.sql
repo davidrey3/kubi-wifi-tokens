@@ -10,6 +10,7 @@ create table if not exists public.clients (
   name text not null,
   slug text not null unique,
   logo_url text,
+  card_template_url text,
   accent_color text not null default '#BCFF5E',
   accent_hover text not null default '#d4ff8f',
   brand_label text not null default 'x Kubi', -- ej: "Amber Cove x Kubi"
