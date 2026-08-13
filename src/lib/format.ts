@@ -56,6 +56,7 @@ export type Client = {
   brand_label: string;
   network_name: string;
   allowed_token_durations: number[];
+  card_token_box: { x: number; y: number; width: number; height: number } | null;
 };
 
 export type Profile = {

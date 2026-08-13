@@ -27,7 +27,7 @@ import {
   type TokenDuration,
   type TokenRow,
 } from '@/lib/format';
-import { exportGeneratedTokens, type TokenExportMode } from '@/lib/token-export';
+import { DEFAULT_CARD_TOKEN_BOX, exportGeneratedTokens, type CardTokenBox, type TokenExportMode } from '@/lib/token-export';
 
 type Section = 'crear' | 'consultar' | 'detalles' | 'ajustes';
 
@@ -83,8 +83,12 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
   const [pwConfirm, setPwConfirm] = useState('');
   const [savingPw, setSavingPw] = useState(false);
   const [cardTemplateUrl, setCardTemplateUrl] = useState(client.card_template_url ?? '');
+  const [cardTokenBox, setCardTokenBox] = useState<CardTokenBox>(client.card_token_box ?? DEFAULT_CARD_TOKEN_BOX);
+  const [savingCardLayout, setSavingCardLayout] = useState(false);
   const [uploadingCardTemplate, setUploadingCardTemplate] = useState(false);
   const cardTemplateRef = useRef<HTMLInputElement>(null);
+  const cardPreviewRef = useRef<HTMLDivElement>(null);
+  const cardDragRef = useRef<{ mode: 'move' | 'resize'; startX: number; startY: number; box: CardTokenBox } | null>(null);
 
   const [flash, setFlash] = useState<string | null>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -139,6 +143,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
             mode: outputMode,
             baseName: `token-${json.code}-${date}`,
             cardTemplateUrl: effectiveCardTemplateUrl || undefined,
+            cardTokenBox,
             onProgress: (completed, total) => setExportProgress({ completed, total }),
           });
         } catch {
@@ -202,6 +207,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
         mode: outputMode,
         baseName: `tokens-${selectedDuration}-dias-${date}`,
         cardTemplateUrl: effectiveCardTemplateUrl || undefined,
+        cardTokenBox,
         onProgress: (completed, total) => setExportProgress({ completed, total }),
       });
       showFlash(`${json.quantity} tokens generados y archivo descargado`);
@@ -310,6 +316,52 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
     }
     setCardTemplateUrl(json.url);
     showFlash('Diseño de tarjeta guardado');
+  }
+
+  function handleCardBoxPointerDown(e: React.PointerEvent<HTMLDivElement>, mode: 'move' | 'resize') {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    cardDragRef.current = { mode, startX: e.clientX, startY: e.clientY, box: { ...cardTokenBox } };
+  }
+
+  function handleCardBoxPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const drag = cardDragRef.current;
+    const preview = cardPreviewRef.current;
+    if (!drag || !preview) return;
+    const bounds = preview.getBoundingClientRect();
+    const dx = (e.clientX - drag.startX) / bounds.width;
+    const dy = (e.clientY - drag.startY) / bounds.height;
+    if (drag.mode === 'move') {
+      setCardTokenBox({
+        ...drag.box,
+        x: Math.max(0, Math.min(1 - drag.box.width, drag.box.x + dx)),
+        y: Math.max(0, Math.min(1 - drag.box.height, drag.box.y + dy)),
+      });
+    } else {
+      setCardTokenBox({
+        ...drag.box,
+        width: Math.max(0.08, Math.min(1 - drag.box.x, drag.box.width + dx)),
+        height: Math.max(0.08, Math.min(1 - drag.box.y, drag.box.height + dy)),
+      });
+    }
+  }
+
+  function handleCardBoxPointerUp(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    cardDragRef.current = null;
+  }
+
+  async function handleSaveCardLayout() {
+    setSavingCardLayout(true);
+    const res = await fetch('/api/client/card-template', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ card_token_box: cardTokenBox }),
+    });
+    setSavingCardLayout(false);
+    if (!res.ok) return showFlash('No se pudo guardar la posición del token');
+    showFlash('Posición del token guardada');
   }
 
   async function handleLogout() {
@@ -1036,10 +1088,11 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                 <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800 }}>Diseño de tarjeta imprimible</h3>
                 <p style={{ margin: '0 0 18px', fontSize: 13, color: '#8E8E96', lineHeight: 1.5 }}>
                   Sube el fondo predeterminado para los PDF imprimibles. Debe tener proporción de tarjeta de crédito
-                  (85.6 × 54 mm) y dejar libre el espacio señalado para que el sistema coloque el token.
+                  (85.6 × 54 mm). Arrastra el recuadro del token y usa la esquina inferior derecha para cambiar su tamaño.
                 </p>
 
                 <div
+                  ref={cardPreviewRef}
                   style={{
                     position: 'relative',
                     width: '100%',
@@ -1073,31 +1126,44 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                     </div>
                   )}
                   <div
+                    onPointerDown={(e) => handleCardBoxPointerDown(e, 'move')}
+                    onPointerMove={handleCardBoxPointerMove}
+                    onPointerUp={handleCardBoxPointerUp}
+                    onPointerCancel={handleCardBoxPointerUp}
                     style={{
                       position: 'absolute',
-                      left: '56%',
-                      top: '43%',
-                      width: '38%',
-                      height: '34%',
+                      left: `${cardTokenBox.x * 100}%`,
+                      top: `${cardTokenBox.y * 100}%`,
+                      width: `${cardTokenBox.width * 100}%`,
+                      height: `${cardTokenBox.height * 100}%`,
                       border: '2px dashed rgba(188,255,94,0.9)',
                       background: 'rgba(188,255,94,0.08)',
-                    }}
-                  />
-                  <div
-                    className="mono"
-                    style={{
-                      position: 'absolute',
-                      left: '56%',
-                      top: '58%',
-                      width: '38%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       textAlign: 'center',
-                      fontSize: 10,
+                      fontSize: `clamp(9px, ${cardTokenBox.height * 42}px, 22px)`,
                       fontWeight: 800,
                       color: '#BCFF5E',
                       textShadow: '0 1px 3px #000',
+                      cursor: 'move',
+                      touchAction: 'none',
+                      userSelect: 'none',
                     }}
                   >
-                    TOKEN AQUÍ
+                    <span className="mono">TOKEN-1234</span>
+                    <div
+                      onPointerDown={(e) => handleCardBoxPointerDown(e, 'resize')}
+                      onPointerMove={handleCardBoxPointerMove}
+                      onPointerUp={handleCardBoxPointerUp}
+                      onPointerCancel={handleCardBoxPointerUp}
+                      title="Cambiar tamaño"
+                      style={{
+                        position: 'absolute', right: -7, bottom: -7, width: 16, height: 16,
+                        borderRadius: 4, background: '#BCFF5E', border: '2px solid #0B0B0C',
+                        cursor: 'nwse-resize', touchAction: 'none',
+                      }}
+                    />
                   </div>
                 </div>
 
@@ -1120,6 +1186,9 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                     style={{ display: 'none' }}
                     onChange={handleCardTemplateUpload}
                   />
+                  <button className="btn-ghost" onClick={handleSaveCardLayout} disabled={savingCardLayout || !effectiveCardTemplateUrl}>
+                    {savingCardLayout ? 'Guardando…' : 'Guardar posición del token'}
+                  </button>
                 </div>
               </div>
 

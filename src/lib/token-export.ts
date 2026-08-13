@@ -1,5 +1,8 @@
 export type TokenExportMode = 'tokens' | 'cards' | 'both';
 
+export type CardTokenBox = { x: number; y: number; width: number; height: number };
+export const DEFAULT_CARD_TOKEN_BOX: CardTokenBox = { x: 0.56, y: 0.43, width: 0.38, height: 0.34 };
+
 export type ExportableToken = {
   code: string;
   duration_days: number;
@@ -11,6 +14,7 @@ type ExportOptions = {
   mode: TokenExportMode;
   baseName: string;
   cardTemplateUrl?: string;
+  cardTokenBox?: CardTokenBox;
   onProgress?: (completed: number, total: number) => void;
 };
 
@@ -71,6 +75,7 @@ export async function exportGeneratedTokens(tokens: ExportableToken[], options: 
   const pageHeight = 279.4;
   const gridWidth = cardWidth * 2 + horizontalGap;
   const gridHeight = cardHeight * 4 + verticalGap * 3;
+  const tokenBox = options.cardTokenBox ?? DEFAULT_CARD_TOKEN_BOX;
 
   for (let index = 0; index < tokens.length; index += 1) {
     const token = tokens[index];
@@ -85,11 +90,12 @@ export async function exportGeneratedTokens(tokens: ExportableToken[], options: 
 
     // The uploaded artwork reserves this right-side area for the access token.
     pdf.setFont('courier', 'bold');
-    pdf.setFontSize(token.code.length > 18 ? 11 : token.code.length > 14 ? 13 : 16);
+    const baseFontSize = 16 * Math.min(tokenBox.height / DEFAULT_CARD_TOKEN_BOX.height, tokenBox.width / DEFAULT_CARD_TOKEN_BOX.width);
+    pdf.setFontSize((token.code.length > 18 ? 0.7 : token.code.length > 14 ? 0.82 : 1) * baseFontSize);
     pdf.setTextColor(86, 20, 32);
-    pdf.text(token.code, cardX + cardWidth * 0.75, cardY + cardHeight * 0.61, {
+    pdf.text(token.code, cardX + cardWidth * (tokenBox.x + tokenBox.width / 2), cardY + cardHeight * (tokenBox.y + tokenBox.height * 0.58), {
       align: 'center',
-      maxWidth: cardWidth * 0.38,
+      maxWidth: cardWidth * tokenBox.width * 0.92,
     });
 
     // Small external crop marks make the eight cards easy to trim.

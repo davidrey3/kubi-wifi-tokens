@@ -1,6 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { DEFAULT_CARD_TOKEN_BOX } from '@/lib/token-export';
+
+const validNumber = (value: unknown) => typeof value === 'number' && Number.isFinite(value);
+
+export async function PATCH(req: NextRequest) {
+  const supabase = supabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'no_autenticado' }, { status: 401 });
+
+  const admin = supabaseAdmin();
+  const { data: profile } = await admin.from('profiles').select('client_id, role').eq('id', user.id).single();
+  if (!profile?.client_id || profile.role !== 'manager') {
+    return NextResponse.json({ error: 'no_autorizado' }, { status: 403 });
+  }
+
+  const body = await req.json().catch(() => null);
+  const box = body?.card_token_box ?? DEFAULT_CARD_TOKEN_BOX;
+  if (![box.x, box.y, box.width, box.height].every(validNumber) || box.x < 0 || box.y < 0 || box.width < 0.08 || box.height < 0.08 || box.x + box.width > 1 || box.y + box.height > 1) {
+    return NextResponse.json({ error: 'posicion_invalida' }, { status: 400 });
+  }
+
+  const normalized = { x: box.x, y: box.y, width: box.width, height: box.height };
+  const { error } = await admin.from('clients').update({ card_token_box: normalized }).eq('id', profile.client_id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json({ card_token_box: normalized });
+}
 
 export async function POST(req: NextRequest) {
   const supabase = supabaseServer();
