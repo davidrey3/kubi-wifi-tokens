@@ -1,7 +1,7 @@
 export type TokenExportMode = 'tokens' | 'cards' | 'both';
 
-export type CardTokenBox = { x: number; y: number; width: number; height: number };
-export const DEFAULT_CARD_TOKEN_BOX: CardTokenBox = { x: 0.56, y: 0.43, width: 0.38, height: 0.34 };
+export type CardTokenBox = { x: number; y: number; width: number; height: number; fontScale?: number };
+export const DEFAULT_CARD_TOKEN_BOX: CardTokenBox = { x: 0.56, y: 0.43, width: 0.38, height: 0.34, fontScale: 1 };
 
 export type ExportableToken = {
   code: string;
@@ -90,7 +90,7 @@ export async function exportGeneratedTokens(tokens: ExportableToken[], options: 
 
     // The uploaded artwork reserves this right-side area for the access token.
     pdf.setFont('courier', 'bold');
-    const baseFontSize = 16 * Math.min(tokenBox.height / DEFAULT_CARD_TOKEN_BOX.height, tokenBox.width / DEFAULT_CARD_TOKEN_BOX.width);
+    const baseFontSize = 16 * (tokenBox.fontScale ?? 1);
     pdf.setFontSize((token.code.length > 18 ? 0.7 : token.code.length > 14 ? 0.82 : 1) * baseFontSize);
     pdf.setTextColor(86, 20, 32);
     pdf.text(token.code, cardX + cardWidth * (tokenBox.x + tokenBox.width / 2), cardY + cardHeight * (tokenBox.y + tokenBox.height * 0.58), {

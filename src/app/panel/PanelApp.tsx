@@ -1142,7 +1142,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                       alignItems: 'center',
                       justifyContent: 'center',
                       textAlign: 'center',
-                      fontSize: `clamp(9px, ${cardTokenBox.height * 42}px, 22px)`,
+                      fontSize: `clamp(8px, ${16 * (cardTokenBox.fontScale ?? 1)}px, 42px)`,
                       fontWeight: 800,
                       color: '#BCFF5E',
                       textShadow: '0 1px 3px #000',
@@ -1169,6 +1169,26 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
 
                 <div style={{ marginTop: 10, fontSize: 11.5, color: '#6A6A72', lineHeight: 1.5 }}>
                   Formatos: PNG, JPG o WebP. Recomendado: 1316 × 830 px o mayor. Máximo 8 MB.
+                </div>
+                <div style={{ marginTop: 18, maxWidth: 480 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9 }}>
+                    <label className="field-label" style={{ margin: 0 }}>Tamaño del texto</label>
+                    <span className="mono" style={{ color: '#BCFF5E', fontSize: 12.5, fontWeight: 800 }}>
+                      {Math.round((cardTokenBox.fontScale ?? 1) * 100)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={50}
+                    max={300}
+                    step={5}
+                    value={Math.round((cardTokenBox.fontScale ?? 1) * 100)}
+                    onChange={(e) => setCardTokenBox((box) => ({ ...box, fontScale: Number(e.target.value) / 100 }))}
+                    style={{ width: '100%', accentColor: '#BCFF5E', cursor: 'pointer' }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10.5, color: '#6A6A72' }}>
+                    <span>Más pequeño</span><span>Más grande</span>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
                   <button
