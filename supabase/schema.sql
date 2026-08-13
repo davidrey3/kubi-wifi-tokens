@@ -335,7 +335,8 @@ from public.tokens
 group by client_id, duration_days;
 
 -- ---------- STORAGE (logos) ----------
--- Crear bucket público "logos" desde el dashboard (Storage → New bucket → public),
--- o descomentar:
--- insert into storage.buckets (id, name, public) values ('logos', 'logos', true)
---   on conflict do nothing;
+insert into storage.buckets (id, name, public)
+values
+  ('logos', 'logos', true),
+  ('card-designs', 'card-designs', true)
+on conflict (id) do update set public = true;

@@ -62,15 +62,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'formato_no_soportado' }, { status: 400 });
   }
 
+  const bucket = 'card-designs';
   const path = `${profile.client_id}/card-template-${Date.now()}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
-  const { error: uploadError } = await admin.storage.from('logos').upload(path, buffer, {
-    contentType: contentTypes[ext],
-    upsert: true,
-  });
+  const uploadOptions = { contentType: contentTypes[ext], upsert: true };
+  let { error: uploadError } = await admin.storage.from(bucket).upload(path, buffer, uploadOptions);
+  if (uploadError?.message.toLowerCase().includes('bucket not found')) {
+    const { error: bucketError } = await admin.storage.createBucket(bucket, { public: true });
+    if (bucketError && !bucketError.message.toLowerCase().includes('already exists')) {
+      return NextResponse.json({ error: bucketError.message }, { status: 400 });
+    }
+    ({ error: uploadError } = await admin.storage.from(bucket).upload(path, buffer, uploadOptions));
+  }
   if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 400 });
 
-  const { data: publicFile } = admin.storage.from('logos').getPublicUrl(path);
+  const { data: publicFile } = admin.storage.from(bucket).getPublicUrl(path);
   const url = publicFile.publicUrl;
   const { error: updateError } = await admin
     .from('clients')

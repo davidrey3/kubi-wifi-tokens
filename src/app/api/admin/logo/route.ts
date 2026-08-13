@@ -23,16 +23,22 @@ export async function POST(req: NextRequest) {
   }
 
   const admin = supabaseAdmin();
+  const bucket = 'logos';
   const path = `${clientId}/logo-${Date.now()}.${ext}`;
   const buf = Buffer.from(await file.arrayBuffer());
 
-  const { error } = await admin.storage.from('logos').upload(path, buf, {
-    contentType: file.type || 'image/png',
-    upsert: true,
-  });
+  const uploadOptions = { contentType: file.type || 'image/png', upsert: true };
+  let { error } = await admin.storage.from(bucket).upload(path, buf, uploadOptions);
+  if (error?.message.toLowerCase().includes('bucket not found')) {
+    const { error: bucketError } = await admin.storage.createBucket(bucket, { public: true });
+    if (bucketError && !bucketError.message.toLowerCase().includes('already exists')) {
+      return NextResponse.json({ error: bucketError.message }, { status: 400 });
+    }
+    ({ error } = await admin.storage.from(bucket).upload(path, buf, uploadOptions));
+  }
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-  const { data: pub } = admin.storage.from('logos').getPublicUrl(path);
+  const { data: pub } = admin.storage.from(bucket).getPublicUrl(path);
   const url = pub.publicUrl;
 
   await admin.from('clients').update({ logo_url: url }).eq('id', clientId);
