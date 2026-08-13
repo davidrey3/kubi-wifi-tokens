@@ -12,6 +12,7 @@ export function todayLabel(): string {
 }
 
 export function durLabel(days: number): string {
+  if (days === 365) return '1 año';
   return days === 1 ? '1 día' : `${days} días`;
 }
 
@@ -20,6 +21,11 @@ export type TokenDuration = (typeof TOKEN_DURATIONS)[number];
 
 export function isTokenDuration(value: number): value is TokenDuration {
   return TOKEN_DURATIONS.includes(value as TokenDuration);
+}
+
+export function clientTokenDurations(client: Pick<Client, 'allowed_token_durations'>): TokenDuration[] {
+  const configured = client.allowed_token_durations ?? TOKEN_DURATIONS;
+  return TOKEN_DURATIONS.filter((duration) => configured.includes(duration));
 }
 
 export function initials(name: string): string {
@@ -49,6 +55,7 @@ export type Client = {
   accent_hover: string;
   brand_label: string;
   network_name: string;
+  allowed_token_durations: number[];
 };
 
 export type Profile = {

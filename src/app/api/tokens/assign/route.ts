@@ -34,6 +34,8 @@ export async function POST(req: NextRequest) {
     }
     const code = error.message.includes('sin_tokens_disponibles')
       ? 'sin_tokens_disponibles'
+      : error.message.includes('duracion_no_permitida')
+        ? 'duracion_no_permitida'
       : error.message.includes('sin_cliente')
         ? 'sin_cliente'
         : 'error_interno';

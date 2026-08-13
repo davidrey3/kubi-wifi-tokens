@@ -15,6 +15,7 @@ create table if not exists public.clients (
   accent_hover text not null default '#d4ff8f',
   brand_label text not null default 'x Kubi', -- ej: "Amber Cove x Kubi"
   network_name text not null default 'Kubi WiFi',
+  allowed_token_durations int[] not null default array[1, 3, 7, 365],
   created_at timestamptz not null default now()
 );
 
@@ -119,6 +120,7 @@ declare
   v_client uuid;
   v_token public.tokens%rowtype;
   v_remaining int;
+  v_allowed_durations int[];
 begin
   if p_duration not in (1, 3, 7, 365) then
     raise exception 'duracion_invalida';
@@ -127,6 +129,11 @@ begin
   select client_id into v_client from public.profiles where id = auth.uid();
   if v_client is null then
     raise exception 'sin_cliente';
+  end if;
+
+  select allowed_token_durations into v_allowed_durations from public.clients where id = v_client;
+  if not (p_duration = any(v_allowed_durations)) then
+    raise exception 'duracion_no_permitida';
   end if;
 
   select * into v_token
@@ -194,6 +201,7 @@ declare
   v_ids uuid[];
   v_tokens json;
   v_remaining int;
+  v_allowed_durations int[];
 begin
   if p_duration not in (1, 3, 7, 365) then
     raise exception 'duracion_invalida';
@@ -205,6 +213,11 @@ begin
   select client_id into v_client from public.profiles where id = auth.uid();
   if v_client is null then
     raise exception 'sin_cliente';
+  end if;
+
+  select allowed_token_durations into v_allowed_durations from public.clients where id = v_client;
+  if not (p_duration = any(v_allowed_durations)) then
+    raise exception 'duracion_no_permitida';
   end if;
 
   select array_agg(id) into v_ids

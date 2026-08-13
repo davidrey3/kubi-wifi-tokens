@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { IconArrowLeft, IconUpload, IconUsers, IconPalette } from '@/components/Icons';
-import { durLabel, initials, TOKEN_DURATIONS, type Client, type Profile, type TokenDuration } from '@/lib/format';
+import { clientTokenDurations, durLabel, initials, TOKEN_DURATIONS, type Client, type Profile, type TokenDuration } from '@/lib/format';
 import { parseLinkyfiTokenCsv } from '@/lib/linkyfi-csv';
 import type { Stat } from './AdminApp';
 
@@ -40,6 +40,7 @@ export function ClientDetail({
   const [bAccent, setBAccent] = useState(client.accent_color);
   const [bLabel, setBLabel] = useState(client.brand_label);
   const [bNetwork, setBNetwork] = useState(client.network_name);
+  const [allowedDurations, setAllowedDurations] = useState<TokenDuration[]>(clientTokenDurations(client));
   const [savingBrand, setSavingBrand] = useState(false);
   const logoRef = useRef<HTMLInputElement>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -142,6 +143,7 @@ export function ClientDetail({
         accent_color: bAccent,
         brand_label: bLabel.trim(),
         network_name: bNetwork.trim(),
+        allowed_token_durations: allowedDurations,
       }),
     });
     const json = await res.json();
@@ -351,6 +353,29 @@ export function ClientDetail({
           Personaliza cómo ve el cliente su portal: logo, color de acento y nombre de la red.
         </p>
 
+        <div style={{ marginBottom: 20 }}>
+          <label className="field-label">Tokens disponibles para este cliente</label>
+          <p style={{ margin: '0 0 10px', fontSize: 12.5, color: '#8E8E96' }}>
+            Estas son las únicas duraciones que verá y podrá generar en su dashboard.
+          </p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {TOKEN_DURATIONS.map((duration) => {
+              const selected = allowedDurations.includes(duration);
+              return (
+                <button
+                  type="button"
+                  key={duration}
+                  className={`chip ${selected ? 'active' : ''}`}
+                  onClick={() => setAllowedDurations((current) => selected ? current.filter((d) => d !== duration) : [...current, duration])}
+                >
+                  {durLabel(duration)}
+                </button>
+              );
+            })}
+          </div>
+          {allowedDurations.length === 0 && <div style={{ marginTop: 8, color: '#FF6B6B', fontSize: 12.5 }}>Selecciona al menos una duración.</div>}
+        </div>
+
         <div className="mobile-stack-row" style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18 }}>
           <div
             style={{
@@ -409,7 +434,7 @@ export function ClientDetail({
           className="btn-accent"
           style={{ marginTop: 20, padding: '11px 22px', fontSize: 13.5, borderRadius: 10 }}
           onClick={handleSaveBrand}
-          disabled={savingBrand}
+          disabled={savingBrand || allowedDurations.length === 0}
         >
           {savingBrand ? 'Guardando…' : 'Guardar marca'}
         </button>

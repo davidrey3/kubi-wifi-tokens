@@ -17,11 +17,11 @@ import {
   IconAlert,
 } from '@/components/Icons';
 import {
+  clientTokenDurations,
   fmtDate,
   todayLabel,
   durLabel,
   initials,
-  TOKEN_DURATIONS,
   type Client,
   type Profile,
   type TokenDuration,
@@ -56,7 +56,8 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
   const supabase = useMemo(() => supabaseBrowser(), []);
 
   const [section, setSection] = useState<Section>('crear');
-  const [selectedDuration, setSelectedDuration] = useState<TokenDuration>(3);
+  const allowedDurations = clientTokenDurations(client);
+  const [selectedDuration, setSelectedDuration] = useState<TokenDuration>(allowedDurations[0] ?? 1);
   const [generated, setGenerated] = useState<Generated | null>(null);
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
@@ -513,8 +514,8 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
               <div className="micro-label" style={{ marginBottom: 12 }}>
                 Duración del token
               </div>
-              <div className="token-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, maxWidth: 860 }}>
-                {TOKEN_DURATIONS.map((d) => {
+              <div className="token-stats-grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(allowedDurations.length, 4)}, 1fr)`, gap: 14, maxWidth: 860 }}>
+                {allowedDurations.map((d) => {
                   const sel = selectedDuration === d;
                   return (
                     <button

@@ -13,7 +13,7 @@ import {
   IconCheck,
   IconPlusCircle,
 } from '@/components/Icons';
-import { fmtDate, todayLabel, durLabel, initials, type Client, type Profile } from '@/lib/format';
+import { fmtDate, todayLabel, durLabel, initials, TOKEN_DURATIONS, type Client, type Profile, type TokenDuration } from '@/lib/format';
 import { ClientDetail } from './ClientDetail';
 
 export type Stat = {
@@ -621,6 +621,7 @@ function NewClientModal({ onClose, onCreated }: { onClose: () => void; onCreated
   const [accent, setAccent] = useState('#BCFF5E');
   const [brandLabel, setBrandLabel] = useState('');
   const [networkName, setNetworkName] = useState('Kubi WiFi');
+  const [allowedDurations, setAllowedDurations] = useState<TokenDuration[]>([...TOKEN_DURATIONS]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -636,6 +637,7 @@ function NewClientModal({ onClose, onCreated }: { onClose: () => void; onCreated
         accent_color: accent,
         brand_label: brandLabel.trim() || `${name.trim()} x Kubi`,
         network_name: networkName.trim() || 'Kubi WiFi',
+        allowed_token_durations: allowedDurations,
       }),
     });
     const json = await res.json();
@@ -706,13 +708,33 @@ function NewClientModal({ onClose, onCreated }: { onClose: () => void; onCreated
           style={{ marginBottom: 20 }}
         />
 
+        <label className="field-label">Tokens disponibles para este cliente</label>
+        <p style={{ margin: '0 0 10px', fontSize: 12.5, color: '#8E8E96' }}>
+          El cliente solo podrá generar las duraciones seleccionadas.
+        </p>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+          {TOKEN_DURATIONS.map((duration) => {
+            const selected = allowedDurations.includes(duration);
+            return (
+              <button
+                type="button"
+                key={duration}
+                className={`chip ${selected ? 'active' : ''}`}
+                onClick={() => setAllowedDurations((current) => selected ? current.filter((d) => d !== duration) : [...current, duration])}
+              >
+                {durLabel(duration)}
+              </button>
+            );
+          })}
+        </div>
+
         {error && <p style={{ margin: '0 0 14px', fontSize: 13, color: '#FF6B6B', fontWeight: 600 }}>{error}</p>}
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           <button className="btn-ghost" onClick={onClose}>
             Cancelar
           </button>
-          <button className="btn-accent" style={{ padding: '10px 22px', fontSize: 14 }} onClick={create} disabled={saving}>
+          <button className="btn-accent" style={{ padding: '10px 22px', fontSize: 14 }} onClick={create} disabled={saving || allowedDurations.length === 0}>
             {saving ? 'Creando…' : 'Crear cliente'}
           </button>
         </div>
