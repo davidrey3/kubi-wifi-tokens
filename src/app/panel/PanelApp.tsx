@@ -61,7 +61,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
   const [generated, setGenerated] = useState<Generated | null>(null);
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
-  const [bulkQuantity, setBulkQuantity] = useState('200');
+  const [bulkQuantity, setBulkQuantity] = useState('10');
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [bulkError, setBulkError] = useState<string | null>(null);
   const [outputMode, setOutputMode] = useState<TokenExportMode>('tokens');
