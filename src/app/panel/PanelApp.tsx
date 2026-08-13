@@ -65,7 +65,6 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [bulkError, setBulkError] = useState<string | null>(null);
   const [outputMode, setOutputMode] = useState<TokenExportMode>('tokens');
-  const [includePrintablePdf, setIncludePrintablePdf] = useState(false);
   const [exportProgress, setExportProgress] = useState<{ completed: number; total: number } | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -138,14 +137,13 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
           const date = new Date().toISOString().slice(0, 10);
           await exportGeneratedTokens([json as Generated], {
             mode: outputMode,
-            includePdf: includePrintablePdf,
             baseName: `token-${json.code}-${date}`,
             cardTemplateUrl: effectiveCardTemplateUrl || undefined,
             onProgress: (completed, total) => setExportProgress({ completed, total }),
           });
         } catch {
           exportSucceeded = false;
-          setGenError('El token fue generado, pero no se pudo preparar la descarga QR. Puedes verlo en el historial.');
+          setGenError('El token fue generado, pero no se pudo preparar la tarjeta. Puedes verlo en el historial.');
         } finally {
           setExportProgress(null);
         }
@@ -202,7 +200,6 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
       const date = new Date().toISOString().slice(0, 10);
       await exportGeneratedTokens(json.tokens as BulkToken[], {
         mode: outputMode,
-        includePdf: includePrintablePdf,
         baseName: `tokens-${selectedDuration}-dias-${date}`,
         cardTemplateUrl: effectiveCardTemplateUrl || undefined,
         onProgress: (completed, total) => setExportProgress({ completed, total }),
@@ -292,8 +289,8 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
       const bitmap = await createImageBitmap(file);
       const ratio = bitmap.width / bitmap.height;
       bitmap.close();
-      if (Math.abs(ratio - 85.6 / 54) > 0.04) {
-        showFlash('La imagen debe tener proporción de tarjeta de crédito (85.6 × 54 mm)');
+      if (ratio < 1.35 || ratio > 1.8) {
+        showFlash('El diseño debe ser una imagen horizontal con formato de tarjeta');
         return;
       }
     } catch {
@@ -338,6 +335,7 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
   });
 
   const { title, subtitle } = TITLES[section];
+  const cardOutputUnavailable = outputMode !== 'tokens' && !effectiveCardTemplateUrl;
 
   const brandVars = {
     '--accent': client.accent_color || '#BCFF5E',
@@ -583,34 +581,18 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                   style={{ width: '100%', minHeight: 44 }}
                 >
                   <option value="tokens">Tokens / CSV solamente</option>
-                  <option value="qr">Códigos QR solamente</option>
-                  <option value="both">CSV + códigos QR</option>
+                  <option value="cards">Tarjetas imprimibles (PDF)</option>
+                  <option value="both">CSV + tarjetas imprimibles</option>
                 </select>
                 {outputMode !== 'tokens' && (
-                  <label
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 9,
-                      marginTop: 12,
-                      color: '#C7C7CF',
-                      fontSize: 13,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={includePrintablePdf}
-                      onChange={(e) => setIncludePrintablePdf(e.target.checked)}
-                      style={{ width: 17, height: 17 }}
-                    />
+                  <div style={{ marginTop: 10, fontSize: 12.5, color: effectiveCardTemplateUrl ? '#C7C7CF' : '#FFB86B' }}>
                     {effectiveCardTemplateUrl
-                      ? 'Incluir PDF con el diseño de tarjeta (8 por página)'
-                      : 'Incluir PDF imprimible con cada QR y su token'}
-                  </label>
+                      ? 'El PDF incluirá 8 tarjetas por página con el token en el espacio reservado.'
+                      : 'Sube primero un diseño de tarjeta en Ajustes para generar el PDF.'}
+                  </div>
                 )}
                 <div style={{ marginTop: 9, fontSize: 11.5, color: '#6A6A72', lineHeight: 1.45 }}>
-                  Los QR se crean localmente en este navegador y codifican únicamente el valor del token.
+                  El sistema coloca únicamente el token sobre el espacio reservado del diseño.
                 </div>
               </div>
 
@@ -618,12 +600,12 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                 className="btn-accent"
                 style={{ marginTop: 24, padding: '14px 26px' }}
                 onClick={handleGenerate}
-                disabled={generating}
+                disabled={generating || cardOutputUnavailable}
               >
                 {generating ? <span className="spinner" /> : <IconBolt color="#0B0B0C" />}
                 {generating
                   ? exportProgress
-                    ? `Preparando QR ${exportProgress.completed}/${exportProgress.total}…`
+                    ? `Preparando tarjetas ${exportProgress.completed}/${exportProgress.total}…`
                     : 'Generando…'
                   : 'Generar Token'}
               </button>
@@ -659,8 +641,8 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
               >
                 <div style={{ fontSize: 16, fontWeight: 800, color: '#F4F4F5' }}>Generación masiva</div>
                 <p style={{ margin: '7px 0 18px', fontSize: 13.5, color: '#8E8E96', lineHeight: 1.5 }}>
-                  Genera varios tokens de {durLabel(selectedDuration)} a la vez. Al terminar, el archivo CSV se
-                  descargará automáticamente.
+                  Genera varios tokens de {durLabel(selectedDuration)} a la vez. Al terminar, la descarga seleccionada
+                  se preparará automáticamente.
                 </p>
                 <div className="mobile-stack-row" style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
                   <label style={{ display: 'flex', flex: 1, flexDirection: 'column', gap: 7 }}>
@@ -679,12 +661,12 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                     className="btn-accent"
                     style={{ minHeight: 44, padding: '11px 20px' }}
                     onClick={handleBulkGenerate}
-                    disabled={bulkGenerating}
+                    disabled={bulkGenerating || cardOutputUnavailable}
                   >
                     {bulkGenerating ? <span className="spinner" /> : <IconBolt color="#0B0B0C" />}
                     {bulkGenerating
                       ? exportProgress
-                        ? `Preparando QR ${exportProgress.completed}/${exportProgress.total}…`
+                        ? `Preparando tarjetas ${exportProgress.completed}/${exportProgress.total}…`
                         : 'Generando…'
                       : outputMode === 'tokens'
                         ? 'Generar y descargar CSV'
@@ -1051,10 +1033,10 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
           {section === 'ajustes' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 620 }}>
               <div className="card">
-                <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800 }}>Diseño de tarjeta QR</h3>
+                <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800 }}>Diseño de tarjeta imprimible</h3>
                 <p style={{ margin: '0 0 18px', fontSize: 13, color: '#8E8E96', lineHeight: 1.5 }}>
                   Sube el fondo predeterminado para los PDF imprimibles. Debe tener proporción de tarjeta de crédito
-                  (85.6 × 54 mm) y dejar libres las zonas marcadas para el QR y el token.
+                  (85.6 × 54 mm) y dejar libre el espacio señalado para que el sistema coloque el token.
                 </p>
 
                 <div
@@ -1093,10 +1075,10 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                   <div
                     style={{
                       position: 'absolute',
-                      left: '65.5%',
-                      top: '39.6%',
-                      width: '18.8%',
-                      height: '29.8%',
+                      left: '56%',
+                      top: '43%',
+                      width: '38%',
+                      height: '34%',
                       border: '2px dashed rgba(188,255,94,0.9)',
                       background: 'rgba(188,255,94,0.08)',
                     }}
@@ -1105,9 +1087,9 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                     className="mono"
                     style={{
                       position: 'absolute',
-                      left: '57%',
-                      top: '78%',
-                      width: '36%',
+                      left: '56%',
+                      top: '58%',
+                      width: '38%',
                       textAlign: 'center',
                       fontSize: 10,
                       fontWeight: 800,
