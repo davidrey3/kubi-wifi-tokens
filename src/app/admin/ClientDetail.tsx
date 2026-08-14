@@ -27,6 +27,7 @@ export function ClientDetail({
   const [uploadDuration, setUploadDuration] = useState<TokenDuration>(1);
   const [codesText, setCodesText] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [deletingDuration, setDeletingDuration] = useState<TokenDuration | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // nuevo usuario
@@ -78,6 +79,27 @@ export function ClientDetail({
     if (!res.ok) return showFlash(`Error al cargar: ${json.error}`);
     setCodesText('');
     showFlash(`${json.inserted} tokens de ${durLabel(uploadDuration)} cargados`);
+    onChanged(client);
+  }
+
+  async function handleDeleteAvailableTokens(duration: TokenDuration, available: number) {
+    if (available <= 0) return;
+    const confirmed = window.confirm(
+      `¿Eliminar los ${available} tokens disponibles de ${durLabel(duration)} para ${client.name}?\n\n` +
+      'Esta acción no eliminará tokens ya utilizados, pero los tokens disponibles eliminados no se pueden recuperar.'
+    );
+    if (!confirmed) return;
+
+    setDeletingDuration(duration);
+    const res = await fetch('/api/admin/tokens', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_id: client.id, duration_days: duration }),
+    });
+    const json = await res.json();
+    setDeletingDuration(null);
+    if (!res.ok) return showFlash(`No se pudieron eliminar: ${json.error}`);
+    showFlash(`${json.deleted} tokens disponibles de ${durLabel(duration)} eliminados`);
     onChanged(client);
   }
 
@@ -207,6 +229,16 @@ export function ClientDetail({
                   <div style={{ marginTop: 10, fontSize: 11.5, color: '#FF6B6B', fontWeight: 700 }}>
                     ⚠ Por debajo del umbral (50)
                   </div>
+                )}
+                {Number(s.disponibles) > 0 && (
+                  <button
+                    className="btn-danger"
+                    style={{ width: '100%', marginTop: 14, padding: '8px 10px', fontSize: 11.5 }}
+                    onClick={() => handleDeleteAvailableTokens(d, Number(s.disponibles))}
+                    disabled={deletingDuration !== null}
+                  >
+                    {deletingDuration === d ? 'Eliminando…' : `Eliminar ${s.disponibles} disponibles`}
+                  </button>
                 )}
               </div>
             );
