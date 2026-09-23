@@ -63,7 +63,6 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
   const [genError, setGenError] = useState<string | null>(null);
   const [bulkQuantity, setBulkQuantity] = useState('10');
   const [bulkGenerating, setBulkGenerating] = useState(false);
-  const [recoveringCards, setRecoveringCards] = useState(false);
   const [bulkError, setBulkError] = useState<string | null>(null);
   const [outputMode, setOutputMode] = useState<TokenExportMode>('tokens');
   const [exportProgress, setExportProgress] = useState<{ completed: number; total: number } | null>(null);
@@ -220,60 +219,12 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
       const detail = error instanceof Error ? error.message : 'Error desconocido';
       setBulkError(
         tokensWereAssigned
-          ? `Los tokens fueron generados, pero no se pudo preparar la descarga: ${detail}. Puedes recuperarlos con el botón de abajo.`
+          ? `Los tokens fueron generados, pero no se pudo preparar la descarga: ${detail}. Revisa el historial.`
           : 'Error de conexión. No se pudo completar la solicitud.'
       );
     } finally {
       setExportProgress(null);
       setBulkGenerating(false);
-    }
-  }
-
-  async function handleRecoverRecentCards() {
-    const quantity = Number(bulkQuantity);
-    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000) {
-      setBulkError('Ingresa una cantidad entre 1 y 1,000 tokens.');
-      return;
-    }
-    if (!effectiveCardTemplateUrl) {
-      setBulkError('Sube primero un diseño de tarjeta en Ajustes.');
-      return;
-    }
-
-    const recent = tokens
-      .filter((token) => Number(token.duration_days) === selectedDuration)
-      .slice(0, quantity)
-      .map((token) => ({
-        code: token.code,
-        duration_days: token.duration_days,
-        assigned_at: token.assigned_at ?? token.created_at,
-        expires_at: token.expires_at ?? token.created_at,
-      }));
-
-    if (recent.length === 0) {
-      setBulkError(`No hay tokens generados de ${durLabel(selectedDuration)} para recuperar.`);
-      return;
-    }
-
-    setRecoveringCards(true);
-    setBulkError(null);
-    try {
-      const date = new Date().toISOString().slice(0, 10);
-      await exportGeneratedTokens(recent, {
-        mode: 'cards',
-        baseName: `tarjetas-recuperadas-${selectedDuration}-dias-${date}`,
-        cardTemplateUrl: effectiveCardTemplateUrl,
-        cardTokenBox,
-        onProgress: (completed, total) => setExportProgress({ completed, total }),
-      });
-      showFlash(`${recent.length} tarjetas recuperadas sin generar tokens nuevos`);
-    } catch (error) {
-      console.error('card recovery failed', error);
-      const detail = error instanceof Error ? error.message : 'Error desconocido';
-      setBulkError(`No se pudieron recuperar las tarjetas: ${detail}.`);
-    } finally {
-      setExportProgress(null);
-      setRecoveringCards(false);
     }
   }
 
@@ -781,18 +732,6 @@ export function PanelApp({ profile, client }: { profile: Profile; client: Client
                 <div style={{ marginTop: 10, fontSize: 11.5, color: '#6A6A72' }}>
                   Máximo 1,000 tokens por descarga.
                 </div>
-                <button
-                  className="btn-ghost"
-                  style={{ marginTop: 14, padding: '10px 16px', fontSize: 12.5 }}
-                  onClick={handleRecoverRecentCards}
-                  disabled={recoveringCards || bulkGenerating || !effectiveCardTemplateUrl}
-                >
-                  {recoveringCards
-                    ? exportProgress
-                      ? `Recuperando ${exportProgress.completed}/${exportProgress.total}…`
-                      : 'Preparando tarjetas…'
-                    : `Descargar tarjetas de los últimos ${bulkQuantity || '0'} tokens (sin generar nuevos)`}
-                </button>
                 {bulkError && (
                   <div
                     style={{
