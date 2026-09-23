@@ -39,13 +39,27 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
+async function normalizeArtworkToPng(blob: Blob): Promise<string> {
+  if (!blob.type.startsWith('image/')) throw new Error('El diseño guardado no es una imagen válida');
+
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(blob);
+  } catch {
+    throw new Error('No se pudo leer el formato del diseño de tarjeta');
+  }
+
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('No se pudo preparar el diseño de tarjeta');
+    context.drawImage(bitmap, 0, 0);
+    return canvas.toDataURL('image/png');
+  } finally {
+    bitmap.close();
+  }
 }
 
 export async function exportGeneratedTokens(tokens: ExportableToken[], options: ExportOptions) {
@@ -64,7 +78,7 @@ export async function exportGeneratedTokens(tokens: ExportableToken[], options: 
     fetch(options.cardTemplateUrl),
   ]);
   if (!templateResponse.ok) throw new Error('No se pudo cargar el diseño de tarjeta');
-  const cardTemplateDataUrl = await blobToDataUrl(await templateResponse.blob());
+  const cardTemplateDataUrl = await normalizeArtworkToPng(await templateResponse.blob());
 
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
   const cardWidth = 85.6;
